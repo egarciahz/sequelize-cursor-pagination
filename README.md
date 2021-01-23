@@ -6,9 +6,7 @@ Sequelize model decorator which provides cursor based pagination queries. [Some 
 
 ## Install
 
-```
-yarn add sequelize-cursor-pagination
-```
+> add this repository to your package.json dependencies
 
 ## How to use
 
@@ -16,7 +14,7 @@ Define a sequelize model:
 
 ```javascript
 // ...
-const withPagination = require('sequelize-cursor-pagination');
+const { withPagination } = require('sequelize-cursor-pagination-relay');
 
 const Counter = sequelize.define('counter', {
   id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
@@ -29,6 +27,22 @@ const options = {
 };
 
 withPagination(options)(Counter);
+```
+
+Or using typescript: 
+
+```typescript
+// ...
+import { Pagination } from 'sequelize-cursor-pagination-relay';
+import { Table } from 'sequelize-typescript';
+
+@Pagination({
+  primaryKeyField: 'id',
+})
+@Table({/*...*/})
+class User extends Model<User> {
+  //...
+}
 ```
 
 The `withPagination` function has the following options:
