@@ -175,4 +175,15 @@ function withPagination({
   };
 }
 
-module.exports = withPagination;
+function Pagination({
+  primaryKeyField = 'id',
+} = {}){
+  return withPagination({ 
+    methodName: 'paginate',
+    primaryKeyField
+  });
+}
+
+module.exports.withPagination = withPagination;
+
+module.exports.Pagination = Pagination;
