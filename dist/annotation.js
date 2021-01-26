@@ -34,7 +34,11 @@ function annotate({ primaryKeyField }, target) {
         const whereQuery = paginationQuery
             ? { [sequelize_1.Op.and]: [paginationQuery, where] }
             : where;
-        const order = Array.prototype.concat.call(null, extraOrder ? [extraOrder] : [], cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField], paginationFieldIsNonId ? [primaryKeyField] : []);
+        const order = [
+            extraOrder ? [extraOrder] : [],
+            cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField],
+            paginationFieldIsNonId ? [primaryKeyField] : [],
+        ].reduce((s, n) => ([...s, ...n]), []);
         return target.findAll(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ where: whereQuery, include }, (limit && { limit: limit + 1 })), { order }), (Array.isArray(attributes) && attributes.length
             ? { attributes }
             : {})), { raw,

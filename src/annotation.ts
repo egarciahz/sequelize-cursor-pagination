@@ -1,5 +1,5 @@
 import * as Relay from 'graphql-relay';
-import { Op, FindOptions as OriginalFindOptions, Order } from 'sequelize';
+import { Op, FindOptions as OriginalFindOptions } from 'sequelize';
 import { ModelCtor } from 'sequelize-typescript';
 
 import { decodeCursor, encodeCursor } from './cursor';
@@ -71,9 +71,9 @@ export function annotate<T extends ModelCtor>({ primaryKeyField }: Required<Pagi
       extraOrder ? [extraOrder] : [],
       cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField],
       paginationFieldIsNonId ? [primaryKeyField] : [],
-    ];
+    ].reduce((s, n) => ([...s, ...n]), []);
 
-    return target.findAll<any>({
+    return target.findAll({
       where: whereQuery,
       include,
       ...(limit && { limit: limit + 1 }),
