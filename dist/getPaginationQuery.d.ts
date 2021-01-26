@@ -1,11 +1,11 @@
 import { Op } from 'sequelize';
-export default function getPaginationQuery(cursor: any, cursorOrderOperator: any, paginationField: any, primaryKeyField: any): {
+export default function getPaginationQuery(cursor: any[], cursorOrderOperator: symbol, paginationField: string, primaryKeyField: string): {
     [Op.or]: {
-        [x: number]: any;
+        [x: string]: any;
     }[];
 } | {
-    [x: number]: {
-        [x: number]: any;
+    [x: string]: {
+        [x: string]: any;
     };
     [Op.or]?: undefined;
 };

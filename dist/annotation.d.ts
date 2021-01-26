@@ -15,4 +15,4 @@ export declare type FindOptions = OriginalFindOptions & {
     after?: Relay.ConnectionCursor;
     desc?: boolean;
 };
-export declare function annotate<T extends ModelCtor>({ primaryKeyField }: PaginationConfig, target: T): T & PaginatedModel<any>;
+export declare function annotate<T extends ModelCtor>({ primaryKeyField }: Required<PaginationConfig>, target: T): T & PaginatedModel<any>;

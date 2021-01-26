@@ -1,27 +1,13 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var sequelize_typescript_1 = require("sequelize-typescript");
-var Model = /** @class */ (function (_super) {
-    __extends(Model, _super);
-    function Model() {
-        return _super !== null && _super.apply(this, arguments) || this;
+exports.Model = void 0;
+const sequelize_typescript_1 = require("sequelize-typescript");
+class Model extends sequelize_typescript_1.Model {
+    constructor(...args) {
+        super(...args);
     }
-    Model.paginate = function (options) {
-        throw new Error('Method not implemented.');
-    };
-    return Model;
-}(sequelize_typescript_1.Model));
-exports.default = Model;
+    static paginate(options) {
+        throw new Error('Method not implemented. Decorate this class with the Paginate decorator.');
+    }
+}
+exports.Model = Model;
