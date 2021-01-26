@@ -7,7 +7,7 @@ const sequelize = new Sequelize('test', null, null, {
   storage: path.join(__dirname, 'db.sqlite'),
 });
 
-const withPagination = require('../src');
+const { withPagination } = require('../dist');
 
 const Test = sequelize.define('test', {
   id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
