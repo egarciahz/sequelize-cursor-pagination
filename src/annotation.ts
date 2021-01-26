@@ -67,11 +67,11 @@ export function annotate<T extends ModelCtor>({ primaryKeyField }: Required<Pagi
       ? { [Op.and]: [paginationQuery, where] }
       : where;
 
-    const order: Order = Array.prototype.concat.call(null,
+    const order: any[] = [
       extraOrder ? [extraOrder] : [],
       cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField],
       paginationFieldIsNonId ? [primaryKeyField] : [],
-    );
+    ];
 
     return target.findAll<any>({
       where: whereQuery,
