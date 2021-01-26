@@ -1,10 +1,10 @@
 import { Op } from 'sequelize';
 
 export default function getPaginationQuery(
-    cursor,
-    cursorOrderOperator,
-    paginationField,
-    primaryKeyField
+    cursor: any[],
+    cursorOrderOperator: symbol,
+    paginationField: string,
+    primaryKeyField: string
 ) {
     if (paginationField !== primaryKeyField) {
         return {
