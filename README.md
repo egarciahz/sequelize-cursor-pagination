@@ -1,12 +1,12 @@
-# Sequelize Cursor Pagination
+# Sequelize Relay Pagination
 
-[![Build Status](https://travis-ci.org/Kaltsoon/sequelize-cursor-pagination.svg?branch=master)](https://travis-ci.org/Kaltsoon/sequelize-cursor-pagination)
+## Cursor-based pagination for specification of relay connections.
 
-Sequelize model decorator which provides cursor based pagination queries. [Some motivation and background](https://dev-blog.apollodata.com/understanding-pagination-rest-graphql-and-relay-b10f835549e7).
+Sequelize model decorator which provides relay cursor based pagination queries. For more information on the original project see [Some motivation and background](https://dev-blog.apollodata.com/understanding-pagination-rest-graphql-and-relay-b10f835549e7).
 
 ## Install
 
-> add this repository to your package.json dependencies
+> switch to branch 'relay-sequelize' and append this repository to your package.json dependencies.
 
 ## How to use
 
@@ -14,7 +14,7 @@ Define a sequelize model:
 
 ```javascript
 // ...
-const { withPagination } = require('sequelize-cursor-pagination-relay');
+const { withPagination } = require('sequelize-relay-pagination');
 
 const Counter = sequelize.define('counter', {
   id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
@@ -22,35 +22,37 @@ const Counter = sequelize.define('counter', {
 });
 
 const options = {
-  methodName: 'paginate',
   primaryKeyField: 'id',
 };
 
 withPagination(options)(Counter);
 ```
 
-Or using typescript: 
+The `withPagination` function has the following options:
+
+- **primaryKeyField**, the primary key field of the model. The default value is `id`.
 
 ```typescript
 // ...
-import { Pagination } from 'sequelize-cursor-pagination-relay';
+import { Pagination, Model } from 'sequelize-relay-pagination';
 import { Table } from 'sequelize-typescript';
 
 @Pagination({
   primaryKeyField: 'id',
 })
-@Table({/*...*/})
-class User extends Model<User> {
-  //...
+@Table
+class Counter extends Model<User> {
+  // ...
 }
 ```
 
-The `withPagination` function has the following options:
+The `Pagination` decorator has the following options:
 
-- **methodName**, the name of the pagination method. The default value is `paginate`.
 - **primaryKeyField**, the primary key field of the model. The default value is `id`.
 
-Call the `paginate` (default method name) method:
+> Important note: remember to extend your class to the Pager Model as seen in the example above.
+
+Call the `paginate` method:
 
 ```javascript
 // ...
@@ -62,12 +64,14 @@ Counter.paginate({
 
 The `paginate` method returns an object with following properties:
 
-- **results**, the results of the query
-- **cursors**, object containing the cursors' related data
-  - **cursors.before**, the first record in the result serialized
-  - **cursors.after**, the last record in the result serialized
-  - **cursors.hasNext**, `true` or `false` depending on whether there are records after the `after` cursor
-  - **cursors.hasPrevious**, `true` or `false` depending on whether there are records before the `before` cursor
+- **edges**, the results of the query
+  - **edges.$.node**, the payload item of the query
+  - **edges.$.cursor**, an opaque string for the paging
+- **pageInfo**, object containing the cursors' related data
+  - **pageInfo.startCursor**, the first record in the result serialized
+  - **pageInfo.endCursor**, the last record in the result serialized
+  - **pageInfo.hasNextPage**, `true` or `false` depending on whether there are records after the `after` cursor
+  - **pageInfo.hasPreviousPage**, `true` or `false` depending on whether there are records before the `before` cursor
 
 The `paginate` method has the following options:
 

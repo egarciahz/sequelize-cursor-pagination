@@ -4,6 +4,6 @@ import { FindOptions } from './annotation';
 
 export default abstract class Model<T = any, T2 = any> extends OriginModel<T, T2> {
     static paginate<M extends OriginModel>(this: new () => M, options?: FindOptions): Promise<Connection<M>> {
-        throw new Error('Method not implemented.');
+        throw new Error('Method not implemented. Decorate this class with the Paginate decorator.');
     }
 }
