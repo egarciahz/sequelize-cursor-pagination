@@ -13,7 +13,7 @@ function Pagination(args: any) {
     if (typeof args === 'function') {
         return annotate({ primaryKeyField: 'id' }, args);
     } else {
-        const options = args as PaginationConfig;
+        const options = { primaryKeyField: 'id', ...args };
         return (t: any) => {
             return annotate(options, t);
         }

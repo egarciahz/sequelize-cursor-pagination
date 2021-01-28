@@ -1,14 +1,10 @@
-import { Op } from 'sequelize';
-
-export default function getPaginationQuery(
-    cursor: any[],
-    cursorOrderOperator: symbol,
-    paginationField: string,
-    primaryKeyField: string
-) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const sequelize_1 = require("sequelize");
+function getPaginationQuery(cursor, cursorOrderOperator, paginationField, primaryKeyField) {
     if (paginationField !== primaryKeyField) {
         return {
-            [Op.or]: [
+            [sequelize_1.Op.or]: [
                 {
                     [paginationField]: {
                         [cursorOrderOperator]: cursor[0],
@@ -22,7 +18,8 @@ export default function getPaginationQuery(
                 },
             ],
         };
-    } else {
+    }
+    else {
         return {
             [paginationField]: {
                 [cursorOrderOperator]: cursor[0],
@@ -30,3 +27,4 @@ export default function getPaginationQuery(
         };
     }
 }
+exports.default = getPaginationQuery;
