@@ -26,12 +26,13 @@
     "url": "https://github.com/egarcia/sequelize-relay-pagination/issues"
   },
   "peerDependencies": {
+    "graphql-relay": "^0.8.0",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^6.6.5",
-    "sequelize-typescript": "^2.1.0",
-    "graphql-relay": "^0.8.0"
+    "sequelize-typescript": "^2.1.0"
   },
   "devDependencies": {
+    "@types/sequelize": "^4.28.10",
     "graphql-relay": "^0.8.0",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^6.6.5",
