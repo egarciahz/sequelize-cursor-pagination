@@ -12,26 +12,6 @@ Sequelize model decorator which provides relay cursor based pagination queries. 
 
 Define a sequelize model:
 
-```javascript
-// ...
-const { withPagination } = require('sequelize-relay-pagination');
-
-const Counter = sequelize.define('counter', {
-  id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
-  value: Sequelize.INTEGER,
-});
-
-const options = {
-  primaryKeyField: 'id',
-};
-
-withPagination(options)(Counter);
-```
-
-The `withPagination` function has the following options:
-
-- **primaryKeyField**, the primary key field of the model. The default value is `id`.
-
 ```typescript
 // ...
 import { Pagination, Model } from 'sequelize-relay-pagination';
@@ -41,7 +21,7 @@ import { Table } from 'sequelize-typescript';
   primaryKeyField: 'id',
 })
 @Table
-class Counter extends Model<User> {
+class Counter extends Model {
   // ...
 }
 ```
@@ -54,12 +34,13 @@ The `Pagination` decorator has the following options:
 
 Call the `paginate` method:
 
-```javascript
-// ...
-Counter.paginate({
+```typescript
+
+await Counter.paginate({
   where: { value: { $gt: 2 } },
   limit: 10,
 });
+
 ```
 
 The `paginate` method returns an object with following properties:
@@ -91,6 +72,4 @@ Other options passed to the `paginate` method will be directly passed to the mod
 
 ## Run tests
 
-```
-yarn test
-```
+tests is in progress!
