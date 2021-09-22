@@ -5,7 +5,7 @@ export default function getPaginationQuery(cursor: any[], cursorOrderOperator: s
     }[];
 } | {
     [x: string]: {
-        [x: string]: any;
+        [x: symbol]: any;
     };
     [Op.or]?: undefined;
 };

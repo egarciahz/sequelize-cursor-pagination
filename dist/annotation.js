@@ -18,18 +18,20 @@ const getPaginationQuery_1 = require("./getPaginationQuery");
 function annotate({ primaryKeyField }, target) {
     const paginate = (options) => {
         const { order: extraOrder, where = {}, attributes = [], include = [], limit, before, after, desc = false, raw = false, paranoid = true, nest = false, mapToModel = false, subQuery } = options, queryArgs = __rest(options, ["order", "where", "attributes", "include", "limit", "before", "after", "desc", "raw", "paranoid", "nest", "mapToModel", "subQuery"]);
-        const decodedBefore = !!before ? cursor_1.decodeCursor(before) : null;
-        const decodedAfter = !!after ? cursor_1.decodeCursor(after) : null;
+        const decodedBefore = !!before ? (0, cursor_1.decodeCursor)(before) : null;
+        const decodedAfter = !!after ? (0, cursor_1.decodeCursor)(after) : null;
         const cursorOrderIsDesc = before ? !desc : desc;
         const cursorOrderOperator = cursorOrderIsDesc ? sequelize_1.Op.lt : sequelize_1.Op.gt;
-        const paginationField = options.paginationField ? options.paginationField : primaryKeyField;
+        const paginationField = options.paginationField
+            ? options.paginationField
+            : primaryKeyField;
         const paginationFieldIsNonId = paginationField !== primaryKeyField;
         let paginationQuery;
         if (before) {
-            paginationQuery = getPaginationQuery_1.default(decodedBefore, cursorOrderOperator, paginationField, primaryKeyField);
+            paginationQuery = (0, getPaginationQuery_1.default)(decodedBefore, cursorOrderOperator, paginationField, primaryKeyField);
         }
         else if (after) {
-            paginationQuery = getPaginationQuery_1.default(decodedAfter, cursorOrderOperator, paginationField, primaryKeyField);
+            paginationQuery = (0, getPaginationQuery_1.default)(decodedAfter, cursorOrderOperator, paginationField, primaryKeyField);
         }
         const whereQuery = paginationQuery
             ? { [sequelize_1.Op.and]: [paginationQuery, where] }
@@ -38,14 +40,20 @@ function annotate({ primaryKeyField }, target) {
             extraOrder ? [extraOrder] : [],
             cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField],
             paginationFieldIsNonId ? [primaryKeyField] : [],
-        ].reduce((s, n) => ([...s, ...n]), []);
-        return target.findAll(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ where: whereQuery, include }, (limit && { limit: limit + 1 })), { order }), (Array.isArray(attributes) && attributes.length
-            ? { attributes }
-            : {})), { raw,
-            paranoid,
-            nest,
-            mapToModel }), (typeof subQuery === 'boolean' && { subQuery })), queryArgs))
-            .then(results => {
+        ].reduce((s, n) => [...s, ...n], []);
+        return Promise.all([
+            /** all filtered */
+            target.count({
+                paranoid,
+                where: where,
+            }),
+            target.findAll(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ where: whereQuery, include }, (limit && { limit: limit + 1 })), { order }), (Array.isArray(attributes) && attributes.length
+                ? { attributes }
+                : {})), { raw,
+                paranoid,
+                nest,
+                mapToModel }), (typeof subQuery === 'boolean' && { subQuery })), queryArgs)),
+        ]).then(([count, results]) => {
             const hasMore = results.length > limit;
             if (hasMore) {
                 results.pop();
@@ -59,29 +67,27 @@ function annotate({ primaryKeyField }, target) {
             let afterCursor = null;
             if (results.length > 0) {
                 beforeCursor = paginationFieldIsNonId
-                    ? cursor_1.encodeCursor([
+                    ? (0, cursor_1.encodeCursor)([
                         results[0][paginationField],
                         results[0][primaryKeyField],
                     ])
-                    : cursor_1.encodeCursor([results[0][paginationField]]);
+                    : (0, cursor_1.encodeCursor)([results[0][paginationField]]);
                 afterCursor = paginationFieldIsNonId
-                    ? cursor_1.encodeCursor([
+                    ? (0, cursor_1.encodeCursor)([
                         results[results.length - 1][paginationField],
                         results[results.length - 1][primaryKeyField],
                     ])
-                    : cursor_1.encodeCursor([results[results.length - 1][paginationField]]);
+                    : (0, cursor_1.encodeCursor)([results[results.length - 1][paginationField]]);
             }
             const edges = results.map((node) => ({
                 node: node,
                 cursor: paginationFieldIsNonId
-                    ? cursor_1.encodeCursor([
-                        node[paginationField],
-                        node[primaryKeyField],
-                    ])
-                    : cursor_1.encodeCursor([node[paginationField]]),
+                    ? (0, cursor_1.encodeCursor)([node[paginationField], node[primaryKeyField]])
+                    : (0, cursor_1.encodeCursor)([node[paginationField]]),
             }));
             return {
                 edges,
+                count,
                 pageInfo: {
                     hasNextPage: hasNext,
                     hasPreviousPage: hasPrevious,
@@ -92,9 +98,8 @@ function annotate({ primaryKeyField }, target) {
         });
     };
     Object.assign(target, {
-        paginate
+        paginate,
     });
     return target;
 }
 exports.annotate = annotate;
-;

@@ -8,5 +8,5 @@ import { PaginationConfig, PaginatedModel } from './annotation';
  */
 declare function Pagination<T extends ModelCtor<M>, M extends Model>(constructor: T): T & PaginatedModel<M>;
 declare function Pagination<T extends ModelCtor<M>, M extends Model>(oprions: PaginationConfig): (constructor: T) => T & PaginatedModel<M>;
-declare function withPagination({ primaryKeyField }: PaginationConfig): <T extends ModelCtor<M>, M extends Model<any, any>>(model: T) => T & PaginatedModel<any>;
+declare function withPagination({ primaryKeyField }: PaginationConfig): <M extends Model<any, any>>(model: ModelCtor<M>) => (new () => M) & import("sequelize-typescript/dist/shared/types").NonAbstract<typeof Model> & PaginatedModel<any>;
 export { withPagination, Pagination, };
