@@ -5,22 +5,32 @@ import { ModelCtor } from 'sequelize-typescript';
 import { decodeCursor, encodeCursor } from './cursor';
 import getPaginationQuery from './getPaginationQuery';
 
-export type PaginatedModel<M> = {
-  paginate(this: { new(): M }, options?: OriginalFindOptions): Promise<Relay.Connection<M>>;
-}
-
 export type PaginationConfig = {
   primaryKeyField?: string;
-}
+};
 
 export type FindOptions = OriginalFindOptions & {
   paginationField?: string;
   before?: Relay.ConnectionCursor;
   after?: Relay.ConnectionCursor;
   desc?: boolean;
+};
+
+export interface Connection<M> extends Relay.Connection<M> {
+  count: number
 }
 
-export function annotate<T extends ModelCtor>({ primaryKeyField }: Required<PaginationConfig>, target: T): T & PaginatedModel<any> {
+export type PaginatedModel<M> = {
+  paginate(
+    this: { new (): M },
+    options?: FindOptions,
+  ): Promise<Connection<M>>;
+};
+
+export function annotate<T extends ModelCtor>(
+  { primaryKeyField }: Required<PaginationConfig>,
+  target: T,
+): T & PaginatedModel<any> {
   const paginate = (options: FindOptions) => {
     const {
       order: extraOrder,
@@ -42,7 +52,9 @@ export function annotate<T extends ModelCtor>({ primaryKeyField }: Required<Pagi
     const decodedAfter = !!after ? decodeCursor(after) : null;
     const cursorOrderIsDesc = before ? !desc : desc;
     const cursorOrderOperator = cursorOrderIsDesc ? Op.lt : Op.gt;
-    const paginationField: string = options.paginationField ? options.paginationField : primaryKeyField;
+    const paginationField: string = options.paginationField
+      ? options.paginationField
+      : primaryKeyField;
     const paginationFieldIsNonId = paginationField !== primaryKeyField;
 
     let paginationQuery;
@@ -71,81 +83,85 @@ export function annotate<T extends ModelCtor>({ primaryKeyField }: Required<Pagi
       extraOrder ? [extraOrder] : [],
       cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField],
       paginationFieldIsNonId ? [primaryKeyField] : [],
-    ].reduce((s, n) => ([...s, ...n]), []);
+    ].reduce((s, n) => [...s, ...n], []);
 
-    return target.findAll({
-      where: whereQuery,
-      include,
-      ...(limit && { limit: limit + 1 }),
-      order,
-      ...(Array.isArray(attributes) && attributes.length
-        ? { attributes }
-        : {}),
-      raw,
-      paranoid,
-      nest,
-      mapToModel,
-      ...(typeof subQuery === 'boolean' && { subQuery }),
-      ...queryArgs,
-    })
-      .then(results => {
-        const hasMore = results.length > limit!;
+    return Promise.all([
+      /** all filtered */
+      target.count({
+        paranoid,
+        where: where,
+      }),
+      target.findAll({
+        where: whereQuery,
+        include,
+        ...(limit && { limit: limit + 1 }),
+        order,
+        ...(Array.isArray(attributes) && attributes.length
+          ? { attributes }
+          : {}),
+        raw,
+        paranoid,
+        nest,
+        mapToModel,
+        ...(typeof subQuery === 'boolean' && { subQuery }),
+        ...queryArgs,
+      }),
+    ]).then(([count, results]) => {
+      const hasMore = results.length > limit!;
 
-        if (hasMore) {
-          results.pop();
-        }
+      if (hasMore) {
+        results.pop();
+      }
 
-        if (before) {
-          results.reverse();
-        }
+      if (before) {
+        results.reverse();
+      }
 
-        const hasNext = !!before || hasMore;
-        const hasPrevious = !!after || (!!before && hasMore);
+      const hasNext = !!before || hasMore;
+      const hasPrevious = !!after || (!!before && hasMore);
 
-        let beforeCursor: string | null = null;
-        let afterCursor: string | null = null;
+      let beforeCursor: string | null = null;
+      let afterCursor: string | null = null;
 
-        if (results.length > 0) {
-          beforeCursor = paginationFieldIsNonId
-            ? encodeCursor([
+      if (results.length > 0) {
+        beforeCursor = paginationFieldIsNonId
+          ? encodeCursor([
               results[0][paginationField],
               results[0][primaryKeyField],
             ])
-            : encodeCursor([results[0][paginationField]]);
+          : encodeCursor([results[0][paginationField]]);
 
-          afterCursor = paginationFieldIsNonId
-            ? encodeCursor([
+        afterCursor = paginationFieldIsNonId
+          ? encodeCursor([
               results[results.length - 1][paginationField],
               results[results.length - 1][primaryKeyField],
             ])
-            : encodeCursor([results[results.length - 1][paginationField]]);
-        }
+          : encodeCursor([results[results.length - 1][paginationField]]);
+      }
 
-        const edges = results.map((node) => ({
-          node: node,
-          cursor: paginationFieldIsNonId
-            ? encodeCursor([
-              node[paginationField],
-              node[primaryKeyField],
-            ])
-            : encodeCursor([node[paginationField]]),
-        }));
+      const edges = results.map((node) => ({
+        node: node,
+        cursor: paginationFieldIsNonId
+          ? encodeCursor([node[paginationField], node[primaryKeyField]])
+          : encodeCursor([node[paginationField]]),
+      }));
 
-        return {
-          edges,
-          pageInfo: {
-            hasNextPage: hasNext,
-            hasPreviousPage: hasPrevious,
-            startCursor: beforeCursor,
-            endCursor: afterCursor,
-          },
-        };
-      });
+      return {
+        edges,
+        count,
+        pageInfo: {
+          hasNextPage: hasNext,
+          hasPreviousPage: hasPrevious,
+          startCursor: beforeCursor,
+          endCursor: afterCursor,
+        },
+      };
+    });
   };
 
   Object.assign(target, {
-    paginate
+    paginate,
   });
 
   return <T & PaginatedModel<any>>target;
-};
+}

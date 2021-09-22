@@ -21,7 +21,7 @@ function Pagination(args: any) {
 }
 
 function withPagination({ primaryKeyField = 'id' }: PaginationConfig) {
-    return function <T extends ModelCtor<M>, M extends Model>(model: T) {
+    return function <M extends Model>(model: ModelCtor<M>) {
         return annotate({ primaryKeyField }, model);
     }
 }
