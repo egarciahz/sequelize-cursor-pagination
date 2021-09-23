@@ -5,7 +5,6 @@ export declare type PaginationConfig = {
     primaryKeyField?: string;
 };
 export declare type FindOptions = OriginalFindOptions & {
-    paginationField?: string;
     before?: Relay.ConnectionCursor;
     after?: Relay.ConnectionCursor;
     desc?: boolean;

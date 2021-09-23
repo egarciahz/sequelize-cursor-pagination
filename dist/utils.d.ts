@@ -1,0 +1,11 @@
+import { WhereOptions, Order } from 'sequelize';
+export declare const parseCursor: (cursor: string) => string[] | null;
+export declare const normalizePrimaryKeyField: (primaryKeyField: string | string[]) => string[];
+export declare const ensurePrimaryKeyFieldInOrder: (order: any, primaryKeyField: string[]) => Order;
+export declare const normalizeOrder: (order: Order | undefined, primaryKeyField: string | string[]) => Order;
+export declare const reverseOrder: (order: any) => Order;
+export declare const serializeCursor: (payload: any) => string;
+export declare const createCursor: (instance: any, order: any) => string;
+export declare const isValidCursor: (cursor: any, order: any) => boolean;
+export declare function recursivelyGetPaginationQuery(order: any, cursor: string[]): WhereOptions;
+export declare const getPaginationQuery: (order: any, cursor: string[]) => WhereOptions | null;

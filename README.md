@@ -37,7 +37,7 @@ Call the `paginate` method:
 ```typescript
 
 await Counter.paginate({
-  where: { value: { $gt: 2 } },
+  where: { key: value },
   limit: 10,
 });
 
@@ -45,6 +45,7 @@ await Counter.paginate({
 
 The `paginate` method returns a promise, which resolves an object with the following properties:
 
+- **count**, the total numbers rows matching the query
 - **edges**, the results of the query
   - **edges.$.node**, the payload item of the query
   - **edges.$.cursor**, an opaque string for the paging
@@ -70,7 +71,7 @@ The examples use the `Counter` model defined above.
 
 Fetch the first `20` edges ordered by the `id` field (the `primaryKeyField` field) in ascending order:
 
-```javascript
+```typescript
 const result = await Counter.paginate({
   limit: 20,
 });
@@ -78,7 +79,7 @@ const result = await Counter.paginate({
 
 First, fetch the first `10` edges ordered by the `value` field in a descending order. Second, fetch the first `10` edges after the `endCursor`. Third, fetch the last `10` edges before `startCursor`:
 
-```javascript
+```typescript
 const firstResult = await Counter.paginate({
   order: [['value', 'DESC']],
   limit: 10,
@@ -97,6 +98,7 @@ const thirdResult = await Counter.paginate({
 });
 ```
 
-## Running tests
+## WIP
 
-tests is in progress!
+- Tests
+- Example App

@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __rest = (this && this.__rest) || function (s, e) {
     var t = {};
     for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
@@ -13,90 +22,54 @@ var __rest = (this && this.__rest) || function (s, e) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.annotate = void 0;
 const sequelize_1 = require("sequelize");
-const cursor_1 = require("./cursor");
-const getPaginationQuery_1 = require("./getPaginationQuery");
+const utils_1 = require("./utils");
 function annotate({ primaryKeyField }, target) {
-    const paginate = (options) => {
-        const { order: extraOrder, where = {}, attributes = [], include = [], limit, before, after, desc = false, raw = false, paranoid = true, nest = false, mapToModel = false, subQuery } = options, queryArgs = __rest(options, ["order", "where", "attributes", "include", "limit", "before", "after", "desc", "raw", "paranoid", "nest", "mapToModel", "subQuery"]);
-        const decodedBefore = !!before ? (0, cursor_1.decodeCursor)(before) : null;
-        const decodedAfter = !!after ? (0, cursor_1.decodeCursor)(after) : null;
-        const cursorOrderIsDesc = before ? !desc : desc;
-        const cursorOrderOperator = cursorOrderIsDesc ? sequelize_1.Op.lt : sequelize_1.Op.gt;
-        const paginationField = options.paginationField
-            ? options.paginationField
-            : primaryKeyField;
-        const paginationFieldIsNonId = paginationField !== primaryKeyField;
-        let paginationQuery;
-        if (before) {
-            paginationQuery = (0, getPaginationQuery_1.default)(decodedBefore, cursorOrderOperator, paginationField, primaryKeyField);
-        }
-        else if (after) {
-            paginationQuery = (0, getPaginationQuery_1.default)(decodedAfter, cursorOrderOperator, paginationField, primaryKeyField);
-        }
-        const whereQuery = paginationQuery
+    const paginate = (_a) => __awaiter(this, void 0, void 0, function* () {
+        var { order: orderOption, where, after, before, limit } = _a, queryArgs = __rest(_a, ["order", "where", "after", "before", "limit"]);
+        let order = (0, utils_1.normalizeOrder)(orderOption, primaryKeyField);
+        order = before ? (0, utils_1.reverseOrder)(order) : order;
+        const cursor = after
+            ? (0, utils_1.parseCursor)(after)
+            : before
+                ? (0, utils_1.parseCursor)(before)
+                : null;
+        const paginationQuery = cursor ? (0, utils_1.getPaginationQuery)(order, cursor) : null;
+        const paginationWhere = paginationQuery
             ? { [sequelize_1.Op.and]: [paginationQuery, where] }
             : where;
-        const order = [
-            extraOrder ? [extraOrder] : [],
-            cursorOrderIsDesc ? [paginationField, 'DESC'] : [paginationField],
-            paginationFieldIsNonId ? [primaryKeyField] : [],
-        ].reduce((s, n) => [...s, ...n], []);
-        return Promise.all([
-            /** all filtered */
-            target.count({
-                paranoid,
-                where: where,
-            }),
-            target.findAll(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ where: whereQuery, include }, (limit && { limit: limit + 1 })), { order }), (Array.isArray(attributes) && attributes.length
-                ? { attributes }
-                : {})), { raw,
-                paranoid,
-                nest,
-                mapToModel }), (typeof subQuery === 'boolean' && { subQuery })), queryArgs)),
-        ]).then(([count, results]) => {
-            const hasMore = results.length > limit;
-            if (hasMore) {
-                results.pop();
-            }
-            if (before) {
-                results.reverse();
-            }
-            const hasNext = !!before || hasMore;
-            const hasPrevious = !!after || (!!before && hasMore);
-            let beforeCursor = null;
-            let afterCursor = null;
-            if (results.length > 0) {
-                beforeCursor = paginationFieldIsNonId
-                    ? (0, cursor_1.encodeCursor)([
-                        results[0][paginationField],
-                        results[0][primaryKeyField],
-                    ])
-                    : (0, cursor_1.encodeCursor)([results[0][paginationField]]);
-                afterCursor = paginationFieldIsNonId
-                    ? (0, cursor_1.encodeCursor)([
-                        results[results.length - 1][paginationField],
-                        results[results.length - 1][primaryKeyField],
-                    ])
-                    : (0, cursor_1.encodeCursor)([results[results.length - 1][paginationField]]);
-            }
-            const edges = results.map((node) => ({
-                node: node,
-                cursor: paginationFieldIsNonId
-                    ? (0, cursor_1.encodeCursor)([node[paginationField], node[primaryKeyField]])
-                    : (0, cursor_1.encodeCursor)([node[paginationField]]),
-            }));
-            return {
-                edges,
-                count,
-                pageInfo: {
-                    hasNextPage: hasNext,
-                    hasPreviousPage: hasPrevious,
-                    startCursor: beforeCursor,
-                    endCursor: afterCursor,
-                },
-            };
-        });
-    };
+        const paginationQueryOptions = Object.assign({ where: paginationWhere, limit,
+            order }, queryArgs);
+        const totalCountQueryOptions = Object.assign({ where }, queryArgs);
+        const cursorCountQueryOptions = Object.assign({ where: paginationWhere }, queryArgs);
+        const [instances, count, cursorCount] = yield Promise.all([
+            target.findAll(paginationQueryOptions),
+            target.count(totalCountQueryOptions),
+            target.count(cursorCountQueryOptions),
+        ]);
+        if (before) {
+            instances.reverse();
+        }
+        const remaining = cursorCount - instances.length;
+        const hasNextPage = (!before && remaining > 0) ||
+            (Boolean(before) && count - cursorCount > 0);
+        const hasPreviousPage = (Boolean(before) && remaining > 0) ||
+            (!before && count - cursorCount > 0);
+        const edges = instances.map((node) => ({
+            node,
+            cursor: (0, utils_1.createCursor)(node, order),
+        }));
+        const pageInfo = {
+            hasNextPage,
+            hasPreviousPage,
+            startCursor: edges.length > 0 ? edges[0].cursor : null,
+            endCursor: edges.length > 0 ? edges[edges.length - 1].cursor : null,
+        };
+        return {
+            count,
+            edges,
+            pageInfo,
+        };
+    });
     Object.assign(target, {
         paginate,
     });
