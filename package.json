@@ -7,7 +7,7 @@
   },
   "name": "sequelize-relay-pagination",
   "description": "Sequelize utility for relay pagination",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "source": "src/index.ts",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
