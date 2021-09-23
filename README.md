@@ -8,9 +8,9 @@ Sequelize model decorator which provides relay cursor based pagination queries. 
 
 > switch to branch 'relay-sequelize' and append this repository to your package.json dependencies.
 
-## How to use
+## How to use?
 
-Define a sequelize model:
+Define a Sequelize model and decorate it with the `withPagination` decorator:
 
 ```typescript
 // ...
@@ -28,7 +28,7 @@ class Counter extends Model {
 
 The `Pagination` decorator has the following options:
 
-- **primaryKeyField**, the primary key field of the model. The default value is `id`.
+- **primaryKeyField**, The primary key field of the model. With composite primary key provide an array containing the keys, for example `['key1', 'key2']`. The default value is `'id'`.
 
 > Important note: remember to extend your class to the Pager Model as seen in the example above.
 
@@ -43,7 +43,7 @@ await Counter.paginate({
 
 ```
 
-The `paginate` method returns an object with following properties:
+The `paginate` method returns a promise, which resolves an object with the following properties:
 
 - **edges**, the results of the query
   - **edges.$.node**, the payload item of the query
@@ -56,20 +56,47 @@ The `paginate` method returns an object with following properties:
 
 The `paginate` method has the following options:
 
-- **where**, the query applied to [findAll](http://docs.sequelizejs.com/manual/tutorial/models-usage.html#-findall-search-for-multiple-elements-in-the-database) call
-- **attributes**, the query applied to [findAll](http://docs.sequelizejs.com/manual/tutorial/models-usage.html#-findall-search-for-multiple-elements-in-the-database) and select only some [attributes](http://docs.sequelizejs.com/manual/tutorial/querying.html#attributes)
-- **include**, applied to `findAll` for [eager loading](http://docs.sequelizejs.com/manual/tutorial/models-usage.html#eager-loading)
-- **limit**, limit the number of records returned
-- **order**, Custom ordering attributes,
-- **desc**, whether to sort in descending order. The default value is `false`.
-- **before**, the before cursor
-- **after**, the after cursor
-- **paginationField**, the field to be used for the pagination. The default value is the `primaryKeyField` option value.
-- **raw**, whether the query will return Sequelize Models or raw data. The default is `false`.
-- **paranoid**, whether the query will return deleted models if the model is set to `paranoid: true`. The default is `true`.
+- `after`: The cursor that indicates _after_ which edge the next set of edges should be fetched
+- `before`: The cursor that indicates _before_ which edge next set of edges should be fetched
+- `limit`: The maximum number of edges returned
 
-Other options passed to the `paginate` method will be directly passed to the model's `findAll` method. Use them at your own risk.
+Other options passed to the `paginate` method will be directly passed to the model's `findAll` method.
 
-## Run tests
+**⚠️ NB:** The `order` option format only supports the `['field']` and `['field', 'DESC']` variations (field name and the optional order direction). For example, ordering by an associated model's field won't work.
+
+## Examples
+
+The examples use the `Counter` model defined above.
+
+Fetch the first `20` edges ordered by the `id` field (the `primaryKeyField` field) in ascending order:
+
+```javascript
+const result = await Counter.paginate({
+  limit: 20,
+});
+```
+
+First, fetch the first `10` edges ordered by the `value` field in a descending order. Second, fetch the first `10` edges after the `endCursor`. Third, fetch the last `10` edges before `startCursor`:
+
+```javascript
+const firstResult = await Counter.paginate({
+  order: [['value', 'DESC']],
+  limit: 10,
+});
+
+const secondResult = await Counter.paginate({
+  order: [['value', 'DESC']],
+  limit: 10,
+  after: firstResult.pageInfo.endCursor,
+});
+
+const thirdResult = await Counter.paginate({
+  order: [['value', 'DESC']],
+  limit: 10,
+  before: secondResult.pageInfo.startCursor,
+});
+```
+
+## Running tests
 
 tests is in progress!

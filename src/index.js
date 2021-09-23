@@ -1,37 +1,15 @@
-import * as Relay from 'graphql-relay';
-import { Op, FindOptions as OriginalFindOptions } from 'sequelize';
-import { ModelCtor } from 'sequelize-typescript';
-
-import {
+const {
+  Op,
   parseCursor,
   createCursor,
   normalizeOrder,
   getPaginationQuery,
   reverseOrder,
-} from './utils';
+} = require('./utils');
 
-export type PaginationConfig = {
-  primaryKeyField?: string;
-};
+const withPagination = (options = {}) => (Model) => {
+  const { methodName = 'paginate', primaryKeyField = 'id' } = options;
 
-export type FindOptions = OriginalFindOptions & {
-  before?: Relay.ConnectionCursor;
-  after?: Relay.ConnectionCursor;
-  desc?: boolean;
-};
-
-export interface Connection<M> extends Relay.Connection<M> {
-  count: number;
-}
-
-export type PaginatedModel<M> = {
-  paginate(this: { new (): M }, options?: FindOptions): Promise<Connection<M>>;
-};
-
-export function annotate<T extends ModelCtor>(
-  { primaryKeyField }: Required<PaginationConfig>,
-  target: T,
-): T & PaginatedModel<any> {
   const paginate = async ({
     order: orderOption,
     where,
@@ -39,7 +17,7 @@ export function annotate<T extends ModelCtor>(
     before,
     limit,
     ...queryArgs
-  }: FindOptions) => {
+  } = {}) => {
     let order = normalizeOrder(orderOption, primaryKeyField);
 
     order = before ? reverseOrder(order) : order;
@@ -73,10 +51,10 @@ export function annotate<T extends ModelCtor>(
       ...queryArgs,
     };
 
-    const [instances, count, cursorCount] = await Promise.all([
-      target.findAll(paginationQueryOptions),
-      target.count(totalCountQueryOptions),
-      target.count(cursorCountQueryOptions),
+    const [instances, totalCount, cursorCount] = await Promise.all([
+      Model.findAll(paginationQueryOptions),
+      Model.count(totalCountQueryOptions),
+      Model.count(cursorCountQueryOptions),
     ]);
 
     if (before) {
@@ -87,11 +65,11 @@ export function annotate<T extends ModelCtor>(
 
     const hasNextPage =
       (!before && remaining > 0) ||
-      (Boolean(before) && count - cursorCount > 0);
+      (Boolean(before) && totalCount - cursorCount > 0);
 
     const hasPreviousPage =
       (Boolean(before) && remaining > 0) ||
-      (!before && count - cursorCount > 0);
+      (!before && totalCount - cursorCount > 0);
 
     const edges = instances.map((node) => ({
       node,
@@ -106,15 +84,15 @@ export function annotate<T extends ModelCtor>(
     };
 
     return {
-      count,
+      totalCount,
       edges,
       pageInfo,
     };
   };
 
-  Object.assign(target, {
-    paginate,
-  });
+  Model[methodName] = paginate;
 
-  return <T & PaginatedModel<any>>target;
-}
+  return Model;
+};
+
+module.exports = withPagination;
