@@ -1,6 +1,5 @@
-import { Connection } from 'graphql-relay';
 import { Model as OriginModel } from 'sequelize-typescript';
-import { FindOptions } from './annotation';
+import { FindOptions, Connection } from './annotation';
 
 export abstract class Model<T = any, T2 = any> extends OriginModel<T, T2> {
     constructor(...args: any[]){
